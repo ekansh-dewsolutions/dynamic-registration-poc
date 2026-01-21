@@ -4,7 +4,7 @@ import DynamicForm from './components/DynamicForm'
 
 // Get configuration from environment variables
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
-const TENANT_ID = import.meta.env.VITE_TENANT_ID || 'xyz'
+const TENANT_ID = 'projectC'
 
 function App() {
   const [fields, setFields] = useState([])

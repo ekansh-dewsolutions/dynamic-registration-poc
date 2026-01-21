@@ -7,9 +7,47 @@ A proof-of-concept for a dynamic registration system where different tenants (pr
 This POC demonstrates:
 - **Multi-tenancy**: Different projects (A & B) with unique tenant IDs
 - **Dynamic Fields**: Each tenant can have different registration fields
+- **Tenant-Specific Collections**: Each tenant's users stored in separate MongoDB collections
+- **Generic Registration API**: Single API validates and routes to tenant-specific collections
+- **Dynamic Validation**: Validation rules defined in backend, consumed by frontend (no hardcoded checks)
 - **Admin Panel**: Create and manage field schemas without code changes
-- **Validation**: Both client-side and server-side validation
+- **Validation**: Centralized validation logic with type-specific rules
 - **MERN Stack**: MongoDB, Express, React, Node.js
+
+## 🔐 Validation Architecture
+
+**Key Feature**: The frontend has **ZERO hardcoded validation logic**. All validation is dynamic and driven by the backend schema.
+
+### How It Works:
+1. **Admin defines validation rules** in the Admin Panel (required, minLength, maxLength, pattern, errorMessage)
+2. **Backend stores rules** in MongoDB FieldSchema collection
+3. **Frontend fetches rules** via GET `/api/fields/:tenantId`
+4. **Frontend validates dynamically** based on the received rules
+5. **Backend validates again** for security (server-side validation)
+
+### Benefits:
+- ✅ Single source of truth for validation rules
+- ✅ Change validation without deploying code
+- ✅ Different validation per tenant
+- ✅ Custom error messages per field
+
+📖 **See [VALIDATION_FLOW.md](VALIDATION_FLOW.md) for detailed documentation**
+
+## 🗄️ Database Architecture
+
+### Collection Structure
+Each tenant automatically gets their own user collection:
+- `fieldschemas` - Stores field configurations for all tenants
+- `tenants` - Stores tenant information
+- `registereduser_xyz` - Project A (xyz) registered users
+- `registereduser_abc` - Project B (abc) registered users
+- `registereduser_*` - Any new tenant gets their own collection
+
+**Benefits:**
+- ✅ Complete data isolation between tenants
+- ✅ Easy to query and manage tenant-specific data
+- ✅ Better performance (no cross-tenant filtering needed)
+- ✅ Natural data separation for security and compliance
 
 ## 📁 Project Structure
 

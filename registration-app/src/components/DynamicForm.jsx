@@ -29,64 +29,47 @@ function DynamicForm({ fields, tenantId, apiUrl }) {
     }
   }
 
-  // Client-side validation
+  // Dynamic client-side validation based on field validation rules from backend
   const validateForm = () => {
     const newErrors = {}
     
     fields.forEach(field => {
       const value = formData[field.id] || ''
+      const stringValue = String(value).trim()
       
       // Check if required field is empty
-      if (field.validation.required && !value.trim()) {
+      if (field.validation?.required && !stringValue) {
         newErrors[field.id] = field.errorMessage || `${field.label} is required`
         return
       }
       
       // Skip further validation if field is empty and not required
-      if (!value.trim()) {
+      if (!stringValue) {
         return
       }
       
-      // Validate minimum length
-      if (field.validation.minLength && value.length < field.validation.minLength) {
-        newErrors[field.id] = `${field.label} must be at least ${field.validation.minLength} characters`
+      // Validate minimum length (if specified in validation rules)
+      if (field.validation?.minLength && stringValue.length < field.validation.minLength) {
+        newErrors[field.id] = field.errorMessage || `${field.label} must be at least ${field.validation.minLength} characters`
         return
       }
       
-      // Validate maximum length
-      if (field.validation.maxLength && value.length > field.validation.maxLength) {
-        newErrors[field.id] = `${field.label} must not exceed ${field.validation.maxLength} characters`
+      // Validate maximum length (if specified in validation rules)
+      if (field.validation?.maxLength && stringValue.length > field.validation.maxLength) {
+        newErrors[field.id] = field.errorMessage || `${field.label} must not exceed ${field.validation.maxLength} characters`
         return
       }
       
-      // Validate email format
-      if (field.type === 'email') {
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-        if (!emailRegex.test(value)) {
-          newErrors[field.id] = field.errorMessage || 'Please enter a valid email address'
-          return
-        }
-      }
-      
-      // Validate phone format
-      if (field.type === 'phone') {
-        const phoneRegex = /^[0-9]{10,15}$/
-        if (!phoneRegex.test(value.replace(/[\s\-\(\)]/g, ''))) {
-          newErrors[field.id] = field.errorMessage || 'Please enter a valid phone number'
-          return
-        }
-      }
-      
-      // Validate custom regex pattern
-      if (field.validation.pattern) {
+      // Validate custom regex pattern (if specified in validation rules)
+      if (field.validation?.pattern) {
         try {
           const regex = new RegExp(field.validation.pattern)
-          if (!regex.test(value)) {
+          if (!regex.test(stringValue)) {
             newErrors[field.id] = field.errorMessage || `${field.label} format is invalid`
             return
           }
         } catch (e) {
-          console.error('Invalid regex pattern:', field.validation.pattern)
+          console.error('Invalid regex pattern:', field.validation.pattern, e)
         }
       }
     })

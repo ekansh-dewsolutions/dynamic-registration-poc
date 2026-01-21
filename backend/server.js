@@ -12,6 +12,9 @@ import adminRoutes from './routes/adminRoutes.js';
 import Tenant from './models/Tenant.js';
 import FieldSchema from './models/FieldSchema.js';
 
+// Import tenant connection utilities
+import { closeAllTenantConnections } from './utils/tenantConnection.js';
+
 // Load environment variables
 dotenv.config();
 
@@ -188,7 +191,27 @@ mongoose.connect(process.env.MONGODB_URI)
 
 // Handle graceful shutdown
 process.on('SIGINT', async () => {
-  console.log('\nShutting down gracefully...');
+  console.log('\n🛑 Shutting down gracefully...');
+  
+  // Close all tenant database connections
+  await closeAllTenantConnections();
+  
+  // Close main database connection
   await mongoose.connection.close();
+  
+  console.log('✅ All connections closed. Goodbye!');
+  process.exit(0);
+});
+
+process.on('SIGTERM', async () => {
+  console.log('\n🛑 Received SIGTERM. Shutting down gracefully...');
+  
+  // Close all tenant database connections
+  await closeAllTenantConnections();
+  
+  // Close main database connection
+  await mongoose.connection.close();
+  
+  console.log('✅ All connections closed. Goodbye!');
   process.exit(0);
 });

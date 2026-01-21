@@ -11,6 +11,10 @@ function App() {
   const [selectedTenant, setSelectedTenant] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [showAddTenant, setShowAddTenant] = useState(false)
+  const [newTenant, setNewTenant] = useState({ tenantId: '', name: '', description: '' })
+  const [addingTenant, setAddingTenant] = useState(false)
+  const [addTenantError, setAddTenantError] = useState(null)
 
   // Fetch all tenants and schemas when component mounts
   useEffect(() => {
@@ -52,6 +56,40 @@ function App() {
     setSelectedTenant(null)
   }
 
+  // Handle adding a new tenant
+  const handleAddTenant = async () => {
+    try {
+      setAddingTenant(true)
+      setAddTenantError(null)
+
+      // Validate inputs
+      if (!newTenant.tenantId || !newTenant.name) {
+        setAddTenantError('Tenant ID and Name are required')
+        setAddingTenant(false)
+        return
+      }
+
+      // Create the tenant
+      await axios.post(`${API_URL}/admin/tenants`, {
+        tenantId: newTenant.tenantId,
+        name: newTenant.name,
+        description: newTenant.description
+      })
+
+      // Reset form and close modal
+      setNewTenant({ tenantId: '', name: '', description: '' })
+      setShowAddTenant(false)
+      setAddingTenant(false)
+
+      // Refresh data
+      await fetchData()
+    } catch (error) {
+      console.error('Error adding tenant:', error)
+      setAddTenantError(error.response?.data?.message || 'Failed to add tenant')
+      setAddingTenant(false)
+    }
+  }
+
   return (
     <div>
       {/* Header */}
@@ -80,11 +118,19 @@ function App() {
             {/* If no tenant is selected, show tenant list */}
             {!selectedTenant ? (
               <div className="card">
-                <h2>Select a Tenant to Edit Schema</h2>
+                <div className="flex-between mb-20">
+                  <h2>Select a Tenant to Edit Schema</h2>
+                  <button 
+                    className="btn btn-primary"
+                    onClick={() => setShowAddTenant(true)}
+                  >
+                    + Add New Tenant
+                  </button>
+                </div>
                 
                 {tenants.length === 0 ? (
                   <div className="alert alert-info">
-                    No tenants found. The backend should seed initial data automatically.
+                    No tenants found. Click "Add New Tenant" to create one.
                   </div>
                 ) : (
                   <div className="tenant-list">
@@ -127,6 +173,75 @@ function App() {
               />
             )}
           </>
+        )}
+
+        {/* Add Tenant Modal */}
+        {showAddTenant && (
+          <div className="modal-overlay" onClick={() => setShowAddTenant(false)}>
+            <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+              <h2>Add New Tenant</h2>
+              
+              {addTenantError && (
+                <div className="alert alert-error mb-20">
+                  {addTenantError}
+                </div>
+              )}
+
+              <div className="form-group">
+                <label>Tenant ID *</label>
+                <input
+                  type="text"
+                  value={newTenant.tenantId}
+                  onChange={(e) => setNewTenant({ ...newTenant, tenantId: e.target.value })}
+                  placeholder="e.g., projectC, client123"
+                />
+                <small style={{ color: '#666', fontSize: '0.85rem' }}>
+                  Unique identifier for the tenant (lowercase, no spaces)
+                </small>
+              </div>
+
+              <div className="form-group">
+                <label>Tenant Name *</label>
+                <input
+                  type="text"
+                  value={newTenant.name}
+                  onChange={(e) => setNewTenant({ ...newTenant, name: e.target.value })}
+                  placeholder="e.g., Project C"
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Description</label>
+                <textarea
+                  value={newTenant.description}
+                  onChange={(e) => setNewTenant({ ...newTenant, description: e.target.value })}
+                  placeholder="Optional description"
+                  rows="3"
+                />
+              </div>
+
+              <div className="flex gap-10">
+                <button 
+                  className="btn btn-primary"
+                  onClick={handleAddTenant}
+                  disabled={addingTenant}
+                >
+                  {addingTenant ? 'Adding...' : 'Add Tenant'}
+                </button>
+                <button 
+                  className="btn btn-secondary"
+                  onClick={() => {
+                    setShowAddTenant(false)
+                    setNewTenant({ tenantId: '', name: '', description: '' })
+                    setAddTenantError(null)
+                  }}
+                  disabled={addingTenant}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
         )}
       </div>
     </div>
